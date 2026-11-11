@@ -169,6 +169,17 @@ class SchoolBusTrackerTestSuite(unittest.TestCase):
         for old in ("Pranav", "Diya", "Aarav", "Ananya", "Harini"):
             self.assertNotIn(old, self.html)
 
+    def test_responsive_no_maxcontent_flex_traps(self):
+        """Responsive fix (2026-11-11): shrink-0 on wrapping flex rows made them
+        claim max-content width (1352px) and stretch the whole page sideways.
+        The banner + sibling rows must flex/wrap, selects must shrink, and the
+        global overflow-x safety net must be present."""
+        self.assertNotIn('flex flex-wrap items-center gap-2 shrink-0', self.html)
+        self.assertIn('overflow-x: clip', self.html)
+        self.assertIn('id="removeStudentSelect" class="flex-1 min-w-0', self.html)
+        self.assertIn('id="guideBannerTitle"', self.html)
+        self.assertIn('space-y-1 flex-1 min-w-0', self.html)
+
     def test_sec_3_frontend_auth_fixes_present(self):
         """Frontend must not fabricate tokens, accept stf_ PINs, print the demo PIN,
         and must persist the sync outbox and log in via the real API."""
