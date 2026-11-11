@@ -137,6 +137,29 @@
         max-width: 100% !important; border: none; border-radius: 0; box-shadow: none;
       }
     }
+    /* Phone-shell content fix (2026-11-11): force single-column mobile layout
+       inside the 412px frame, whatever the real viewport width is. */
+    body.phone-shell-mode main .sm\:flex-row,
+    body.phone-shell-mode main .md\:flex-row,
+    body.phone-shell-mode main .lg\:flex-row { flex-direction: column !important; align-items: stretch !important; }
+    body.phone-shell-mode main .sm\:grid-cols-2,
+    body.phone-shell-mode main .sm\:grid-cols-3,
+    body.phone-shell-mode main .sm\:grid-cols-4,
+    body.phone-shell-mode main .md\:grid-cols-2,
+    body.phone-shell-mode main .md\:grid-cols-3,
+    body.phone-shell-mode main .md\:grid-cols-12,
+    body.phone-shell-mode main .lg\:grid-cols-12 { grid-template-columns: minmax(0, 1fr) !important; }
+    body.phone-shell-mode main .lg\:col-span-5,
+    body.phone-shell-mode main .lg\:col-span-6,
+    body.phone-shell-mode main .lg\:col-span-7 { grid-column: auto !important; }
+    body.phone-shell-mode main .sm\:w-40,
+    body.phone-shell-mode main .sm\:w-44 { width: auto !important; }
+    /* Fixed-chrome scroll clearance (2026-11-11): the sticky header and the fixed
+       bottom nav must never cover a scrolled-to control. */
+    html { scroll-padding-bottom: 110px; scroll-padding-top: 110px; }
+    @media (max-width: 639px) {
+      html { scroll-padding-top: 245px; }
+    }
     /* Native Phone Shell Preview Mode */
     body.phone-shell-mode {
       background-color: #0f172a;
@@ -230,7 +253,7 @@
   </header>
 
   <!-- Main Content -->
-  <main class="max-w-4xl w-full mx-auto px-4 py-6 flex-1 space-y-6">
+  <main class="max-w-4xl w-full mx-auto px-4 pt-6 pb-28 flex-1 space-y-6">
 
     <!-- STEP 6: Multi-Bus Fleet Switcher & Driver Quick-Call / SOS Bar -->
     <section class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-4">
@@ -1133,9 +1156,9 @@
 
       <!-- Add Found Item Form (Driver/Attendant) -->
       <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-        <div class="flex flex-1 flex-col sm:flex-row gap-2">
-          <input id="lostItemNameInput" type="text" placeholder="Found Item (e.g. Geometry Box or ID Lanyard)" class="flex-1 px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white focus:outline-none focus:border-amber-500" />
-          <input id="lostItemSeatInput" type="text" placeholder="Seat / Stop (e.g. Seat 3B)" class="sm:w-40 px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white focus:outline-none focus:border-amber-500" />
+        <div class="flex flex-1 min-w-0 flex-col sm:flex-row gap-2">
+          <input id="lostItemNameInput" type="text" placeholder="Found Item (e.g. Geometry Box or ID Lanyard)" class="flex-1 min-w-0 px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white focus:outline-none focus:border-amber-500" />
+          <input id="lostItemSeatInput" type="text" placeholder="Seat / Stop (e.g. Seat 3B)" class="sm:w-40 min-w-0 px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white focus:outline-none focus:border-amber-500" />
         </div>
         <button id="postLostItemBtn" type="button" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-900 text-amber-300 hover:bg-slate-800 transition shrink-0">
           🎒 + Post Found Item
@@ -4653,6 +4676,12 @@
     document.getElementById('togglePhoneShellBtn').addEventListener('click', () => {
       isPhoneShellMode = !isPhoneShellMode;
       const btn = document.getElementById('togglePhoneShellBtn');
+      if (isPhoneShellMode && window.screen.width < 640) {
+        isPhoneShellMode = false;
+        pushAlert("info", "📱 Phone Frame is a desktop preview tool. On this phone-sized screen the app already runs full-width, so the frame was not applied.");
+        renderApp();
+        return;
+      }
       if (isPhoneShellMode) {
         document.body.classList.add('phone-shell-mode');
         btn.textContent = "🖥️ Switch to Full Desktop View";

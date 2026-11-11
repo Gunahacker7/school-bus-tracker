@@ -169,6 +169,15 @@ class SchoolBusTrackerTestSuite(unittest.TestCase):
         for old in ("Pranav", "Diya", "Aarav", "Ananya", "Harini"):
             self.assertNotIn(old, self.html)
 
+    def test_responsive_scroll_padding_for_fixed_chrome(self):
+        """Sticky header + fixed bottom nav must never cover a scrolled-to
+        control: html needs scroll-padding on both ends (2026-11-11)."""
+        with open(_find_project_file("index.html"), "r", encoding="utf-8") as f:
+            src = f.read()
+        self.assertIn("scroll-padding-bottom: 110px", src)
+        self.assertIn("scroll-padding-top: 110px", src)
+        self.assertIn("scroll-padding-top: 245px", src)  # tall mobile header
+
     def test_responsive_no_maxcontent_flex_traps(self):
         """Responsive fix (2026-11-11): shrink-0 on wrapping flex rows made them
         claim max-content width (1352px) and stretch the whole page sideways.
