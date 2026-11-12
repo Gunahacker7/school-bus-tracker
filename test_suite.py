@@ -242,7 +242,12 @@ class LiveServerSecurityTests(unittest.TestCase):
         self.assertIn('"fleet"', data)
 
     def test_live_2_login_flow_and_fixed_role(self):
-        passcode = os.environ.get("BUS_TRACKER_PASSCODE", "1234")
+        passcode = os.environ.get("BUS_TRACKER_PASSCODE")
+        if not passcode:
+            self.skipTest(
+                "BUS_TRACKER_PASSCODE is not set; export the passcode chosen "
+                "via set_passcode.py to run the live login test"
+            )
         status, _ = self._request("POST", "/api/auth/login", {"passcode": "wrong-passcode"})
         self.assertEqual(status, 403)
         status, data = self._request(

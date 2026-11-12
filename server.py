@@ -11,14 +11,14 @@ Security fixes applied (2026-11-11 audit):
   full rosters + GPS of minors exposed without auth).
 - Login role is server-fixed to "staff" (client can no longer pick a role).
 - Login rate limiting: per-IP lockout after repeated passcode failures
-  (the 4-digit demo passcode space is only 10,000 combinations).
+  (a short passcode has a small search space).
 - HMAC secret is no longer hardcoded: set BUS_TRACKER_SECRET in the
   environment. If unset, a random per-boot secret is generated (tokens
   stop working across restarts) and a warning is printed.
 - Staff passcode is set with set_passcode.py (writes bus_tracker.env with
   a SHA-256 hash + a generated server secret), or via the BUS_TRACKER_PASSCODE
-  / BUS_TRACKER_PASSCODE_HASH environment variables. The default "1234" is
-  demo-only and prints a warning at startup.
+  / BUS_TRACKER_PASSCODE_HASH environment variables. There is NO default
+  passcode: if none is configured, the server refuses to start (fail closed).
 - Request bodies are size-capped and malformed JSON returns HTTP 400
   instead of crashing the handler.
 - ThreadingHTTPServer: one slow request no longer blocks every bus.
@@ -85,10 +85,11 @@ if _passcode_hash_env:
 elif _passcode_env:
     STAFF_PASSCODE_HASH = hashlib.sha256(_passcode_env.encode("utf-8")).hexdigest()
 else:
-    STAFF_PASSCODE_HASH = hashlib.sha256(b"1234").hexdigest()
-    print(
-        "WARNING: using the DEMO staff passcode (1234). "
-        "Run set_passcode.py before any real deployment."
+    raise SystemExit(
+        "ERROR: no staff passcode configured. Run set_passcode.py first "
+        "(it writes bus_tracker.env), or set BUS_TRACKER_PASSCODE / "
+        "BUS_TRACKER_PASSCODE_HASH in the environment. Refusing to start: "
+        "this server has no default passcode."
     )
 
 TOKEN_MAX_AGE_SECONDS = 12 * 60 * 60  # staff tokens expire after 12 hours
