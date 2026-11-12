@@ -1414,7 +1414,7 @@
 
     // P0.1 & P0.3: Cryptographic Staff Auth + Backend Sync Client with Offline Outbox Queue
     // SHA-256 digest of the staff passcode (set with set_passcode.py) so plaintext is never stored in code or DOM
-    const STAFF_PASSCODE_SHA256 = "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4";
+    const STAFF_PASSCODE_SHA256 = "9e09e197955aa85d841e9592e07017470afb36aa1c48e4ae3c871196e068e00c";
     let sessionAuthToken = ""; // Real tokens come only from POST /api/auth/login (see fetchServerToken).
 
     async function sha256Hex(message) {
