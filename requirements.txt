@@ -1,0 +1,3 @@
+# No third-party dependencies: server.py, set_passcode.py and test_suite.py
+# run entirely on the Python 3 standard library (http.server, sqlite3,
+# hashlib, hmac). Nothing to install.

@@ -26,7 +26,12 @@ import unittest
 _HERE = os.path.dirname(os.path.abspath(__file__))
 
 
-def _find_project_file(name):
+def _find_project_file(name: str) -> str:
+    """Locate a project file next to this suite or one directory up.
+
+    Falls back to the path next to this file when it exists in neither
+    place, so callers fail with a clear file-not-found error.
+    """
     for base in (_HERE, os.path.dirname(_HERE)):
         candidate = os.path.join(base, name)
         if os.path.exists(candidate):
@@ -39,8 +44,17 @@ import server
 
 
 class SchoolBusTrackerTestSuite(unittest.TestCase):
+    """Static source checks plus in-process backend unit tests.
+
+    Most tests assert that security-critical patterns are present (or
+    absent) in index.html, and exercise server.py's token and database
+    functions directly. Live HTTP behaviour is covered separately by
+    LiveServerSecurityTests.
+    """
+
     @classmethod
     def setUpClass(cls):
+        """Load index.html once for all source-pattern assertions."""
         with open(_find_project_file("index.html"), "r", encoding="utf-8") as f:
             cls.html = f.read()
 
@@ -204,6 +218,7 @@ class LiveServerSecurityTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        """Boot the real HTTP server on an ephemeral localhost port."""
         fd, cls.db_file = tempfile.mkstemp(suffix=".db")
         os.close(fd)
         server.BusTrackerAPIHandler.db_conn = server.init_db(cls.db_file)
@@ -214,12 +229,19 @@ class LiveServerSecurityTests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        """Stop the test server and remove its temporary database."""
         cls.httpd.shutdown()
         cls.httpd.server_close()
         if os.path.exists(cls.db_file):
             os.remove(cls.db_file)
 
-    def _request(self, method, path, body=None, headers=None):
+    def _request(self, method: str, path: str, body=None, headers: dict = None):
+        """Send one HTTP request to the test server.
+
+        body may be a dict (JSON-encoded here), a raw string/bytes payload
+        (used for the malformed-JSON test), or None. Returns a
+        (status_code, response_text) tuple.
+        """
         conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=10)
         payload = body if isinstance(body, (str, bytes)) else (json.dumps(body) if body is not None else None)
         hdrs = {"Content-Type": "application/json"}
@@ -232,6 +254,7 @@ class LiveServerSecurityTests(unittest.TestCase):
         return resp.status, data
 
     def test_live_1_fleet_requires_auth(self):
+        """GET /api/fleet must 401 without/with a forged token, 200 with a real one."""
         status, _ = self._request("GET", "/api/fleet")
         self.assertEqual(status, 401)
         status, _ = self._request("GET", "/api/fleet", headers={"Authorization": "Bearer stf_x_hmac"})
@@ -242,6 +265,7 @@ class LiveServerSecurityTests(unittest.TestCase):
         self.assertIn('"fleet"', data)
 
     def test_live_2_login_flow_and_fixed_role(self):
+        """Login rejects a wrong passcode and always issues a staff-role token."""
         passcode = os.environ.get("BUS_TRACKER_PASSCODE")
         if not passcode:
             self.skipTest(
@@ -260,6 +284,7 @@ class LiveServerSecurityTests(unittest.TestCase):
         self.assertTrue(server.verify_token(token))
 
     def test_live_3_malformed_json_returns_400_not_crash(self):
+        """A malformed JSON body returns HTTP 400 and the server stays alive."""
         token = server.issue_token("staff")
         status, _ = self._request(
             "POST",
@@ -273,6 +298,7 @@ class LiveServerSecurityTests(unittest.TestCase):
         self.assertEqual(status, 200)
 
     def test_live_4_sync_roundtrip(self):
+        """State posted to /api/sync is readable back from /api/fleet."""
         token = server.issue_token("staff")
         status, _ = self._request(
             "POST",

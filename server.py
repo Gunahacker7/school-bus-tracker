@@ -43,7 +43,7 @@ from urllib.parse import urlparse
 
 DB_PATH = os.environ.get("BUS_TRACKER_DB", "bus_tracker.db")
 
-def _load_local_env_file():
+def _load_local_env_file() -> dict:
     """Read simple KEY=VALUE lines from bus_tracker.env next to this file
     (created by set_passcode.py). Real environment variables win."""
     values = {}
@@ -64,7 +64,11 @@ def _load_local_env_file():
 _LOCAL_ENV = _load_local_env_file()
 
 
-def _config(name):
+def _config(name: str) -> str:
+    """Look up a config value: real environment first, then bus_tracker.env.
+
+    Returns an empty string when the name is not set anywhere.
+    """
     return os.environ.get(name) or _LOCAL_ENV.get(name) or ""
 
 
@@ -112,6 +116,11 @@ else:
 
 
 def _origin_allowed(origin: str) -> bool:
+    """Return True when a CORS Origin header is allowed to call the API.
+
+    With BUS_TRACKER_CORS_ORIGIN set, only the listed origins pass; without
+    it, only local development origins (localhost / 127.0.0.1 / "null") do.
+    """
     if not origin:
         return False
     if ALLOWED_ORIGINS:
@@ -124,6 +133,11 @@ def _origin_allowed(origin: str) -> bool:
 
 
 def issue_token(role: str = "staff") -> str:
+    """Issue an HMAC-signed bearer token of the form stf_<role>_<ts>_<sig>.
+
+    The signature covers "<role>:<issued-at-unix-time>"; verify_token
+    re-checks it together with the token's age.
+    """
     ts = str(int(time.time()))
     payload = f"{role}:{ts}"
     sig = hmac.new(SECRET_KEY, payload.encode("utf-8"), hashlib.sha256).hexdigest()[:24]
@@ -131,6 +145,13 @@ def issue_token(role: str = "staff") -> str:
 
 
 def verify_token(token: str) -> bool:
+    """Validate a bearer token issued by issue_token.
+
+    Accepts an optional "Bearer " prefix. Rejects malformed tokens, bad
+    HMAC signatures, future-dated tokens (beyond a small clock skew) and
+    tokens older than TOKEN_MAX_AGE_SECONDS. A token that merely has the
+    right shape is never enough — the signature must verify.
+    """
     if not token:
         return False
     if token.startswith("Bearer "):
@@ -155,6 +176,11 @@ def verify_token(token: str) -> bool:
 
 
 def init_db(db_path: str = DB_PATH) -> sqlite3.Connection:
+    """Open the SQLite database and create the schema if it is missing.
+
+    Tables: fleet_state (latest synced state per bus) and audit_events
+    (append-only log of sync payloads, retention-capped).
+    """
     conn = sqlite3.connect(db_path, check_same_thread=False)
     cur = conn.cursor()
     cur.execute(
@@ -184,15 +210,30 @@ def init_db(db_path: str = DB_PATH) -> sqlite3.Connection:
 
 
 class BusTrackerAPIHandler(BaseHTTPRequestHandler):
+    """HTTP handler for the bus tracker REST API.
+
+    Routes:
+      GET  /api/health                      (public)
+      POST /api/auth/login                  (passcode -> staff token)
+      GET  /api/fleet                       (staff token required)
+      POST /api/sync, /api/attendance, /api/gps,
+           /api/notifications, /api/sos     (staff token required)
+
+    The shared SQLite connection is attached as the db_conn class
+    attribute by run_server (or by tests) before serving.
+    """
+
     db_conn = None
 
-    def _cors_headers(self):
+    def _cors_headers(self) -> None:
+        """Emit CORS headers when the request Origin is allow-listed."""
         origin = self.headers.get("Origin", "")
         if _origin_allowed(origin):
             self.send_header("Access-Control-Allow-Origin", origin)
             self.send_header("Vary", "Origin")
 
-    def _send_json(self, status_code: int, payload: dict):
+    def _send_json(self, status_code: int, payload: dict) -> None:
+        """Serialize payload as JSON and write the HTTP response."""
         body = json.dumps(payload).encode("utf-8")
         self.send_response(status_code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -203,10 +244,17 @@ class BusTrackerAPIHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def do_OPTIONS(self):
+    def do_OPTIONS(self) -> None:
+        """Answer CORS preflight requests."""
         self._send_json(200, {"ok": True})
 
     def _read_body(self) -> dict:
+        """Read and JSON-parse the request body.
+
+        Returns {} for an empty body. Raises ValueError when the body is
+        larger than MAX_BODY_BYTES or is not valid JSON, so callers can
+        answer 413 / 400 instead of crashing.
+        """
         length = int(self.headers.get("Content-Length", "0"))
         if length <= 0:
             return {}
@@ -218,6 +266,11 @@ class BusTrackerAPIHandler(BaseHTTPRequestHandler):
         return json.loads(raw)
 
     def _require_auth(self) -> bool:
+        """Check the Authorization header for a valid staff token.
+
+        Sends a 401 response and returns False when the token is missing
+        or invalid; returns True when the request may proceed.
+        """
         auth_header = self.headers.get("Authorization", "")
         if not verify_token(auth_header):
             self._send_json(401, {"error": "Unauthorized: valid staff bearer token required"})
@@ -225,6 +278,7 @@ class BusTrackerAPIHandler(BaseHTTPRequestHandler):
         return True
 
     def _login_locked_out(self, ip: str) -> bool:
+        """Return True while the client IP is in a login lockout period."""
         until = _login_lockouts.get(ip, 0)
         if until and time.time() < until:
             return True
@@ -232,7 +286,12 @@ class BusTrackerAPIHandler(BaseHTTPRequestHandler):
             _login_lockouts.pop(ip, None)
         return False
 
-    def _record_login_failure(self, ip: str):
+    def _record_login_failure(self, ip: str) -> None:
+        """Record a failed login attempt for an IP.
+
+        Reaching LOGIN_MAX_FAILURES inside LOGIN_WINDOW_SECONDS locks the
+        IP out for LOGIN_LOCKOUT_SECONDS and resets its failure list.
+        """
         now = time.time()
         fails = [t for t in _login_failures.get(ip, []) if now - t < LOGIN_WINDOW_SECONDS]
         fails.append(now)
@@ -241,7 +300,8 @@ class BusTrackerAPIHandler(BaseHTTPRequestHandler):
             _login_lockouts[ip] = now + LOGIN_LOCKOUT_SECONDS
             _login_failures[ip] = []
 
-    def do_GET(self):
+    def do_GET(self) -> None:
+        """Handle GET /api/health (public) and GET /api/fleet (auth)."""
         parsed = urlparse(self.path)
         if parsed.path == "/api/health":
             self._send_json(200, {"status": "ok", "service": "school-bus-tracker-api"})
@@ -266,7 +326,8 @@ class BusTrackerAPIHandler(BaseHTTPRequestHandler):
             return
         self._send_json(404, {"error": "Not found"})
 
-    def do_POST(self):
+    def do_POST(self) -> None:
+        """Handle POST /api/auth/login and the authenticated sync endpoints."""
         parsed = urlparse(self.path)
         try:
             body = self._read_body()
@@ -333,7 +394,11 @@ class BusTrackerAPIHandler(BaseHTTPRequestHandler):
         self._send_json(404, {"error": "Endpoint not found"})
 
 
-def run_server(port: int = 8080, host: str = None):
+def run_server(port: int = 8080, host: str = None) -> None:
+    """Start the API server and serve requests forever.
+
+    Attaches the shared SQLite connection to the handler class first.
+    """
     # Default bind is localhost only. Set BUS_TRACKER_BIND=0.0.0.0 to expose
     # the API on the LAN deliberately (auth is still required, but every
     # device on the network can then attempt logins).

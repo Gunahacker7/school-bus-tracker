@@ -32,21 +32,85 @@ python3 set_passcode.py   # set a real staff passcode first (writes bus_tracker.
 python3 server.py         # serves http://127.0.0.1:8080
 ```
 
-## Security notes
+## Architecture
 
-- Real HMAC-signed staff tokens with 12-hour expiry; forged token shapes rejected
-- `/api/fleet` requires authentication; login is rate-limited
-- Server secret comes from `bus_tracker.env` / environment, never hardcoded
+Two parts that work independently or together:
+
+- **Frontend — `index.html`**: one self-contained HTML/CSS/JavaScript file
+  (no build step). It holds the routes, stops and rosters for Buses 12, 15
+  and 18, tracks pickup attendance stop-by-stop, simulates GPS movement
+  with Haversine geofencing and ETAs, and keeps its state in the browser.
+  Used standalone, all data stays on the device.
+- **Backend — `server.py` (optional)**: a small authenticated REST API on
+  Python's `ThreadingHTTPServer` with a SQLite database. Staff log in with
+  a passcode and receive an HMAC-signed token; the app then syncs fleet
+  state to `/api/sync` (and sibling endpoints) and reads the shared fleet
+  back from `/api/fleet`. Sync payloads are also appended to an
+  `audit_events` table with capped retention.
+- **`set_passcode.py`**: one-time provisioning tool that installs the staff
+  passcode hash into both the frontend and the backend config.
+
+## Tech stack
+
+- HTML5, CSS and vanilla JavaScript in a single file (Tailwind via CDN)
+- Python 3 standard library only — `http.server`, `sqlite3`, `hashlib`,
+  `hmac` (see `requirements.txt`; nothing to install)
+- Browser `localStorage` for standalone state; SQLite for backend sync
+- `unittest` for the automated test suite
+
+## Security
+
+- **No default passcode, fail closed**: the staff passcode is stored only
+  as a SHA-256 hash. If no passcode is configured, `server.py` refuses to
+  start — there is no fallback credential anywhere.
+- Real HMAC-signed staff tokens with 12-hour expiry; future-dated tokens
+  rejected and forged token shapes never accepted — the signature must
+  verify.
+- Login role is fixed server-side to "staff"; login attempts are
+  rate-limited per IP (lockout after repeated failures).
+- `/api/fleet` and all sync endpoints require a valid staff token.
+- Server secret comes from `bus_tracker.env` / environment, never
+  hardcoded; request bodies are size-capped and malformed JSON returns
+  HTTP 400 instead of crashing the handler.
+- CORS is allow-listed (local development origins by default), and the
+  server binds to localhost unless explicitly configured otherwise.
 - No weak hash fallbacks in the browser passcode check (fails closed)
-- All user data is rendered escaped (XSS-safe); exports scrub session data
-- `bus_tracker.env` holds secrets — never commit it
+- All user data is rendered escaped (XSS-safe); CSV exports are sanitized
+  against formula injection and scrub session data
+- `bus_tracker.env` holds secrets — never commit it (it is in `.gitignore`)
 
-## Tests
+## Testing
 
 ```bash
-python3 test_suite.py   # 18 tests: functional, live-server security, SEO, rebrand
+python3 test_suite.py
+```
+
+20 tests in two groups: static/functional checks on the frontend and
+backend units (XSS escaping, per-bus datasets, token issue/verify,
+SQLite persistence, CSV sanitization, SEO metadata, rebrand, mobile
+responsiveness), plus behavioural security tests that boot the real
+server on an ephemeral port (fleet endpoint requires auth, login flow
+and fixed role, malformed-JSON handling, sync round-trip). One live
+login test additionally needs the staff passcode exported as
+`BUS_TRACKER_PASSCODE`; it skips itself when that is not set.
+
+## Project structure
+
+```text
+school-bus-tracker/
+├── index.html          # Single-file web app (routes, rosters, attendance, GPS)
+├── server.py           # Optional authenticated REST + SQLite sync backend
+├── set_passcode.py     # One-time staff passcode provisioning tool
+├── test_suite.py       # unittest suite: functional + live-server security tests
+├── requirements.txt    # No third-party dependencies (stdlib only)
+├── LICENSE             # MIT
+└── bus_tracker.env     # Local secrets — created by set_passcode.py, never committed
 ```
 
 ## Author
 
 Gunasekar E · Chennai
+
+## License
+
+MIT — see [LICENSE](LICENSE).

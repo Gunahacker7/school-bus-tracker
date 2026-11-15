@@ -29,6 +29,14 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def main() -> int:
+    """Prompt for a new staff passcode and install its SHA-256 hash.
+
+    The passcode comes from the SBT_NEW_PIN environment variable when set
+    (used by automated tests), otherwise from a hidden interactive prompt
+    with a confirmation entry. On success the hash is written into
+    index.html and bus_tracker.env; on any validation failure nothing is
+    changed. Returns a process exit code (0 = success).
+    """
     pin = os.environ.get("SBT_NEW_PIN")
     if pin is None:
         pin = getpass.getpass("New staff passcode (6-16 characters): ")

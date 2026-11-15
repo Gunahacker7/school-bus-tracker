@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local secrets / environment — never commit
+.env
+bus_tracker.env
+
+# Local database created by server.py
+*.db
+
+# OS / editor noise
+.DS_Store
