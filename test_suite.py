@@ -212,6 +212,72 @@ class SchoolBusTrackerTestSuite(unittest.TestCase):
         self.assertIn("/auth/login", self.html)
         self.assertIn("campustrack_outbox_queue", self.html)
 
+    # --- Orbix Round 2 tests (added 2026-11-21) ---
+
+    def test_r2_1_school_profile_config(self):
+        """R2 (a): school is a configurable entity — profile object with the SNS
+        pilot as default, School Settings panel, persistence + sync payload,
+        and the 5-step Add-your-school onboarding with deep links."""
+        self.assertIn("const DEFAULT_SCHOOL_PROFILE = {", self.html)
+        self.assertIn('name: "S. N. S Matriculation School"', self.html)
+        self.assertIn('id="schoolSettingsSection"', self.html)
+        self.assertIn('id="schoolNameInput"', self.html)
+        self.assertIn('id="schoolAddressInput"', self.html)
+        self.assertIn('id="schoolTaglineInput"', self.html)
+        self.assertIn('id="saveSchoolProfileBtn"', self.html)
+        self.assertIn('id="restorePilotSchoolBtn"', self.html)
+        self.assertIn("schoolProfile: { ...schoolProfile }", self.html)
+        self.assertIn("parsed.schoolProfile", self.html)
+        self.assertIn("schoolHeaderLine", self.html)
+        self.assertIn("${schoolProfile.name}", self.html)
+        self.assertEqual(self.html.count("data-onboard-target="), 5)
+        for target in ("schoolSettingsSection", "fleetSwitcherSection",
+                       "routeCustomizerCard", "pinLockBanner"):
+            self.assertIn(f'data-onboard-target="{target}"', self.html)
+
+    def test_r2_2_parent_summary_and_sos_pin(self):
+        """R2 (c): copyable WhatsApp trip summary, SOS pinned to the parent feed,
+        feed entries carrying the school name, and status-change timestamps."""
+        self.assertIn('id="copyTripSummaryBtn"', self.html)
+        self.assertIn("function buildParentTripSummary()", self.html)
+        self.assertIn("function pushAlert(type, text, opts)", self.html)
+        self.assertIn("{ pinned: true }", self.html)
+        self.assertIn("orderedFeed", self.html)
+        self.assertIn("PINNED SOS", self.html)
+        self.assertIn("statusChangedAt = getFormattedTime()", self.html)
+        self.assertIn("school: schoolProfile.name", self.html)
+        self.assertIn("item.school", self.html)
+
+    def test_r2_3_about_panel_and_language_toggle(self):
+        """R2 (d): About this project panel (collapsed by default) and the second
+        Tamil/English toggle in Parent Watch sharing one toggle function."""
+        self.assertIn('id="aboutProjectSection"', self.html)
+        self.assertIn('id="toggleAboutProjectBtn"', self.html)
+        self.assertIn('id="aboutProjectBody" class="hidden', self.html)
+        self.assertIn("Orbix Round 2 build", self.html)
+        self.assertIn('id="langToggleParentBtn"', self.html)
+        self.assertIn("function toggleLanguage()", self.html)
+        self.assertIn("langToggleParentText", self.html)
+
+    def test_r2_4_render_deploy_ready(self):
+        """R2 (b): server reads the PORT env var; render.yaml ships the deploy
+        manifest; README documents the Round 2 features accurately."""
+        with open(_find_project_file("server.py"), "r", encoding="utf-8") as f:
+            server_src = f.read()
+        self.assertIn('os.environ.get("PORT"', server_src)
+        with open(_find_project_file("render.yaml"), "r", encoding="utf-8") as f:
+            render_yaml = f.read()
+        self.assertIn("startCommand: python3 server.py", render_yaml)
+        self.assertIn("BUS_TRACKER_BIND", render_yaml)
+        self.assertIn("0.0.0.0", render_yaml)
+        self.assertIn("school-bus-tracker-gunasekar-e-s-projects.vercel.app", render_yaml)
+        with open(_find_project_file("README.md"), "r", encoding="utf-8") as f:
+            readme = f.read()
+        self.assertIn("Multi-school profiles (Orbix Round 2", readme)
+        self.assertIn("Parent trip summary (Orbix Round 2)", readme)
+        self.assertIn("About this project panel (Orbix Round 2)", readme)
+        self.assertIn("render.yaml", readme)
+
 
 class LiveServerSecurityTests(unittest.TestCase):
     """Boot the real HTTP server on an ephemeral port and probe it."""
@@ -313,6 +379,30 @@ class LiveServerSecurityTests(unittest.TestCase):
         self.assertEqual(status, 200)
         fleet = json.loads(data)["fleet"]
         self.assertEqual(fleet["12"]["state"]["currentStopIndex"], 1)
+
+    def test_live_5_school_profile_sync_roundtrip(self):
+        """R2 (a): a schoolProfile inside the /api/sync fleetState is stored
+        server-side and comes back from /api/fleet for a second device."""
+        token = server.issue_token("staff")
+        profile = {
+            "name": "Demo Public School",
+            "address": "Test Rd, Demo Town",
+            "tagline": "Every child accounted for",
+        }
+        status, _ = self._request(
+            "POST",
+            "/api/sync",
+            {"activeBusId": "12", "fleetState": {"currentStopIndex": 1, "schoolProfile": profile}},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        self.assertEqual(status, 200)
+        status, data = self._request(
+            "GET", "/api/fleet", headers={"Authorization": f"Bearer {token}"}
+        )
+        self.assertEqual(status, 200)
+        fleet = json.loads(data)["fleet"]
+        self.assertEqual(fleet["12"]["state"]["schoolProfile"]["name"], "Demo Public School")
+        self.assertEqual(fleet["12"]["state"]["schoolProfile"]["tagline"], "Every child accounted for")
 
 
 if __name__ == "__main__":
