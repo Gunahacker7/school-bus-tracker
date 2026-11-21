@@ -15,6 +15,9 @@ Tamil Nadu 606604.
 - Parent alerts via native call / SMS / WhatsApp deep links, plus SOS
 - Trip reports, term bus-fee pass tracker, lost & found board
 - Optional authenticated backend (`server.py`, Python + SQLite) for fleet sync
+- **Multi-school profiles (Orbix Round 2, 21–22 Nov 2026):** any school sets its own name, address and tagline in School Settings (admin role, staff-gated) — the header, trip reports and fee receipt rebrand instantly, and the profile syncs to other devices via the backend. A 5-step "Add your school" guide deep-links to the existing tools. S. N. S Matriculation School stays the shipped pilot.
+- **Parent trip summary (Orbix Round 2):** one tap in Parent Watch copies a WhatsApp-ready status text for the watched child (school, child, bus, stop, status, time). SOS alerts pin to the top of the parent alert feed, and every feed entry carries its school name.
+- **About this project panel (Orbix Round 2):** problem, pilot, tech and build notes in the app footer (collapsed by default); the Tamil/English toggle is now in Parent Watch as well as the header.
 
 ## Run it
 
@@ -31,6 +34,18 @@ With the sync backend:
 python3 set_passcode.py   # set a real staff passcode first (writes bus_tracker.env)
 python3 server.py         # serves http://127.0.0.1:8080
 ```
+
+## Deploying the backend (Orbix Round 2)
+
+`render.yaml` at the repo root is the Render blueprint: pure-stdlib Python
+web service, `python3 server.py`, `BUS_TRACKER_BIND=0.0.0.0`, CORS
+allow-listed to the live Vercel origin. Set `BUS_TRACKER_SECRET` (a fresh
+random value) and `BUS_TRACKER_PASSCODE_HASH` (the SHA-256 staff passcode
+hash from the local `bus_tracker.env` — only the hash travels) in the
+Render dashboard; `server.py` reads the assigned port from `PORT`. Paste
+the live backend URL into the app's API URL field (Settings section) so
+staff and parents share one synced fleet. Until a backend URL is set, the
+app runs fully in standalone `localStorage` mode — offline-first by design.
 
 ## Architecture
 
@@ -100,6 +115,7 @@ login test additionally needs the staff passcode exported as
 school-bus-tracker/
 ├── index.html          # Single-file web app (routes, rosters, attendance, GPS)
 ├── server.py           # Optional authenticated REST + SQLite sync backend
+├── render.yaml         # Render blueprint for the hosted sync backend (R2)
 ├── set_passcode.py     # One-time staff passcode provisioning tool
 ├── test_suite.py       # unittest suite: functional + live-server security tests
 ├── requirements.txt    # No third-party dependencies (stdlib only)
