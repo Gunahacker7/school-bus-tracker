@@ -462,6 +462,10 @@
 
         <!-- Sibling Switcher + Select Parent's Stop + One-Tap Leave Toggle -->
         <div class="flex flex-wrap items-center gap-2 min-w-0">
+          <button id="langToggleParentBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-white/90 border border-slate-200 text-slate-800 hover:bg-white transition shadow-sm flex items-center gap-1">
+            <span>🌐</span>
+            <span id="langToggleParentText">தமிழ் / EN</span>
+          </button>
           <div class="inline-flex items-center bg-white/90 p-1 rounded-xl border border-slate-200">
             <button id="siblingChild1Btn" type="button" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-sky-600 text-white shadow-sm transition">
               👦 Krishna (5-A)
@@ -481,6 +485,10 @@
 
           <button id="toggleMyChildLeaveBtn" type="button" class="px-3 py-2 rounded-xl text-xs font-semibold bg-white border border-rose-200 text-rose-700 hover:bg-rose-50 transition shadow-sm">
             🏠 Not Riding Today
+          </button>
+
+          <button id="copyTripSummaryBtn" type="button" class="px-3 py-2 rounded-xl text-xs font-semibold bg-white border border-sky-200 text-sky-700 hover:bg-sky-50 transition shadow-sm">
+            📋 Copy WhatsApp Summary
           </button>
         </div>
       </div>
@@ -1314,6 +1322,26 @@
       </div>
     </section>
 
+    <!-- ORBIX R2 (d): About this project (collapsed by default) -->
+    <section id="aboutProjectSection" class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">About this project</span>
+          <h2 class="font-bold text-base text-slate-900">School Bus Tracker — every child accounted for, on every trip</h2>
+        </div>
+        <button id="toggleAboutProjectBtn" type="button" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 transition">
+          ℹ️ About this project
+        </button>
+      </div>
+      <div id="aboutProjectBody" class="hidden space-y-3 text-xs text-slate-600 leading-relaxed">
+        <p><strong class="text-slate-900">The problem.</strong> In most small-town Indian schools, once a child leaves for the bus stop, parents know nothing until the bus returns — no boarding confirmation, no live fleet view, just paper lists and phone calls. Commercial tracking is priced for big transport fleets, not for a small matriculation school.</p>
+        <p><strong class="text-slate-900">The pilot.</strong> Live today at S. N. S Matriculation School, Tiruvannamalai — Buses 12, 15 and 18, with a named student roster in daily use as the pilot configuration.</p>
+        <p><strong class="text-slate-900">How it works.</strong> Staff check each student in at their stop — by tapping the roster or scanning the student's QR boarding pass — so every child carries a live status (waiting, boarded, absent). Parents watch their own child in Parent Watch; SOS and alerts are one tap away. A single-file web app (HTML, CSS and vanilla JavaScript) with an optional Python + SQLite sync backend (HMAC-signed staff sessions, 12-hour tokens). Offline-first on low-end Android phones, in English and Tamil, on a zero-cost stack.</p>
+        <p><strong class="text-slate-900">Orbix Round 2 build (21–22 Nov 2026).</strong> Multi-school profiles — any school can set its own name, address and tagline in School Settings, with a 5-step Add-your-school guide. A parent trip summary (one tap copies a WhatsApp-ready status text) and SOS pinned to the top of the parent alert feed. The sync backend is deploy-ready (render.yaml shipped, PORT-aware server); the live Render deploy is pending the owner's Render sign-in, and the app runs fully offline-first until then.</p>
+        <p class="text-[11px] text-slate-500">Built solo by Gunasekar E, Chennai, for Orbix — the 48-Hour Global Open Innovation Hackathon (Makers Need More / Unstop). Code: github.com/Gunahacker7/school-bus-tracker</p>
+      </div>
+    </section>
+
     <!-- NEW: Native Android (.APK / Play Store) & iOS (.IPA / App Store) Builder Studio -->
     <section id="nativeStudioPanel" class="hidden bg-slate-900 text-white rounded-2xl p-5 shadow-lg border-2 border-amber-400 space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
@@ -1390,7 +1418,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
         <div class="bg-slate-800/90 p-3.5 rounded-xl border border-slate-700 space-y-1">
           <div class="font-bold text-amber-300">1. Change School Name & Bus Fleet (`fleetBuses`)</div>
-          <p class="text-slate-300 leading-relaxed">Search for <code class="text-emerald-300">const fleetBuses</code> in the script to edit bus numbers, license plates (<code class="text-emerald-300">TN-20-AB-4512</code>), driver names, and phone numbers.</p>
+          <p class="text-slate-300 leading-relaxed">Change the school name, address and tagline in the School Settings panel (School Admin role) — the header, trip reports and fee receipt rebrand instantly, no code edits. Bus numbers, license plates (<code class="text-emerald-300">TN-20-AB-4512</code>), driver names and phone numbers live in <code class="text-emerald-300">const fleetBuses</code> in the script.</p>
         </div>
         <div class="bg-slate-800/90 p-3.5 rounded-xl border border-slate-700 space-y-1">
           <div class="font-bold text-emerald-300">2. Edit Default Stops & Students (`getDefaultStops()`)</div>
@@ -2646,15 +2674,46 @@
       return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
-    function pushAlert(type, text) {
+    // ORBIX R2 (c): feed entries carry the school name (so a second school's
+    // feed is self-identifying) and can be pinned (SOS stays on top).
+    function pushAlert(type, text, opts) {
+      const pinned = Boolean(opts && opts.pinned);
       alertFeed.unshift({
         time: getFormattedTime(),
         type,
-        text: String(text || "")
+        text: String(text || ""),
+        school: schoolProfile.name,
+        pinned
       });
       if (alertFeed.length > 12) {
-        alertFeed.pop();
+        // Trim the oldest NON-pinned entry first so a pinned SOS survives.
+        let dropIdx = alertFeed.length - 1;
+        while (dropIdx >= 0 && alertFeed[dropIdx].pinned) dropIdx -= 1;
+        if (dropIdx >= 0) alertFeed.splice(dropIdx, 1);
+        // If every entry is pinned (SOS only), keep all of them — safety first.
       }
+    }
+
+    // ORBIX R2 (c): parent-facing trip summary for the watched child.
+    // Plain text, copied to the clipboard — the app sends nothing anywhere;
+    // the parent pastes it into the family chat themselves.
+    function buildParentTripSummary() {
+      const activeFleet = fleetBuses[activeBusId] || fleetBuses["12"];
+      const child = getPrimaryParentChild();
+      if (!child) return "";
+      const status = child.student.status;
+      const when = child.student.statusChangedAt || getStopDisplayTime(child.stop);
+      const statusPhrase = status === 'boarded'
+        ? `boarded at ${when}`
+        : status === 'absent'
+        ? `not riding today (marked ${when})`
+        : `waiting at the stop (pickup ${when})`;
+      const closing = status === 'boarded'
+        ? "All well."
+        : status === 'absent'
+        ? "Marked not riding today."
+        : "Waiting for pickup.";
+      return `${schoolProfile.name}: ${child.student.name} (Bus ${activeFleet.routeNumber}) ${statusPhrase}, Stop: ${child.stop.name}. ${closing}`;
     }
 
     // P2.1: O(1) Student Totals from cached index
@@ -2973,6 +3032,8 @@
       document.getElementById('kpiProgressLabel').textContent = dict.kpiProgress;
       document.getElementById('kpiBoardedLabel').textContent = dict.kpiBoarded;
       document.getElementById('langToggleText').textContent = dict.langBtnLabel;
+      const langParentText = document.getElementById('langToggleParentText');
+      if (langParentText) langParentText.textContent = dict.langBtnLabel;
 
       const parentStop = busStops[parentStopIndex] || busStops[0];
       const currentStop = busStops[currentStopIndex] || busStops[0];
@@ -3514,6 +3575,7 @@
           card.querySelector('[data-action="board"]').addEventListener('click', () => {
             if (student.status !== 'boarded') {
               student.status = 'boarded';
+              student.statusChangedAt = getFormattedTime();
               selectedQrStudentId = student.id;
               rebuildRosterIndex();
               BackendSyncClient.enqueue("/attendance", "POST", { studentId: student.id, status: "boarded", stopId: currentStop.id });
@@ -3526,6 +3588,7 @@
           card.querySelector('[data-action="absent"]').addEventListener('click', () => {
             if (student.status !== 'absent') {
               student.status = 'absent';
+              student.statusChangedAt = getFormattedTime();
               selectedQrStudentId = student.id;
               rebuildRosterIndex();
               BackendSyncClient.enqueue("/attendance", "POST", { studentId: student.id, status: "absent", stopId: currentStop.id });
@@ -3576,9 +3639,13 @@
         alertFeedContainer.innerHTML = `<p class="text-xs text-slate-400 italic py-4 text-center">No alerts logged yet. Move the bus or check in a student!</p>`;
       } else {
         const alertFrag = document.createDocumentFragment();
-        alertFeed.forEach(item => {
+        // Pinned entries (SOS) render first, newest first within each group.
+        const orderedFeed = [...alertFeed].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+        orderedFeed.forEach(item => {
           const itemDiv = document.createElement('div');
-          const styleClass = item.type === 'urgent'
+          const styleClass = item.pinned
+            ? 'bg-rose-50 border-rose-400 text-rose-950'
+            : item.type === 'urgent'
             ? 'bg-amber-50 border-amber-300 text-amber-950'
             : item.type === 'arrived'
             ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
@@ -3587,14 +3654,31 @@
             : 'bg-slate-50 border-slate-200 text-slate-700';
 
           itemDiv.className = `p-2.5 rounded-xl border text-xs flex items-start justify-between gap-2 ${styleClass}`;
+          const textWrap = document.createElement('span');
+          textWrap.className = "leading-relaxed font-medium";
+          if (item.pinned) {
+            const pinBadge = document.createElement('span');
+            pinBadge.className = "font-bold text-rose-700";
+            pinBadge.textContent = "📌 PINNED SOS — ";
+            textWrap.appendChild(pinBadge);
+          }
           const textSpan = document.createElement('span');
-          textSpan.className = "leading-relaxed font-medium";
           textSpan.textContent = item.text;
+          textWrap.appendChild(textSpan);
+          const metaDiv = document.createElement('div');
+          metaDiv.className = "text-right shrink-0";
           const timeSpan = document.createElement('span');
-          timeSpan.className = "text-[10px] text-slate-400 font-semibold whitespace-nowrap shrink-0";
+          timeSpan.className = "block text-[10px] text-slate-400 font-semibold whitespace-nowrap";
           timeSpan.textContent = item.time;
-          itemDiv.appendChild(textSpan);
-          itemDiv.appendChild(timeSpan);
+          metaDiv.appendChild(timeSpan);
+          if (item.school) {
+            const schoolSpan = document.createElement('span');
+            schoolSpan.className = "block text-[9px] text-slate-400 whitespace-nowrap";
+            schoolSpan.textContent = item.school;
+            metaDiv.appendChild(schoolSpan);
+          }
+          itemDiv.appendChild(textWrap);
+          itemDiv.appendChild(metaDiv);
           alertFrag.appendChild(itemDiv);
         });
         alertFeedContainer.appendChild(alertFrag);
@@ -3793,6 +3877,7 @@
       currentStop.roster.forEach(student => {
         if (student.status !== 'boarded') {
           student.status = 'boarded';
+          student.statusChangedAt = getFormattedTime();
           newlyBoarded += 1;
         }
       });
@@ -4299,7 +4384,7 @@
       toast.classList.remove('hidden');
       BackendSyncClient.enqueue("/sos", "POST", { busId: activeBusId, plate: fleet.plate, stopName: currentStop.name, lat, lng });
       playSoundChime('urgent');
-      pushAlert("urgent", `🛡️ SOS Alert dispatched to Transport Desk & Backend API for Bus ${fleet.plate} (${lat}N, ${lng}E).`);
+      pushAlert("urgent", `🛡️ SOS Alert dispatched to Transport Desk & Backend API for Bus ${fleet.plate} (${lat}N, ${lng}E).`, { pinned: true });
       sendNativeBrowserNotification("🚨 School Bus SOS Dispatched", sosBody);
       renderApp();
     });
@@ -4310,6 +4395,11 @@
 
     document.getElementById('togglePublishGuideBtn').addEventListener('click', () => {
       document.getElementById('publishGuidePanel').classList.toggle('hidden');
+    });
+
+    // ORBIX R2 (d): About this project panel (collapsed by default).
+    document.getElementById('toggleAboutProjectBtn').addEventListener('click', () => {
+      document.getElementById('aboutProjectBody').classList.toggle('hidden');
     });
 
     document.getElementById('closePublishGuideBtn').addEventListener('click', () => {
@@ -4327,6 +4417,7 @@
       if (!match) return;
       const activeFleet = fleetBuses[activeBusId] || fleetBuses["12"];
       match.student.status = 'boarded';
+      match.student.statusChangedAt = getFormattedTime();
       currentStopIndex = match.stopIndex;
       rebuildRosterIndex();
       BackendSyncClient.enqueue("/attendance", "POST", { action: "qr_scan", studentId: match.student.id, status: "boarded", stopId: match.stop.id });
@@ -4393,17 +4484,52 @@
 
       if (myChildInfo.student.status === 'absent') {
         myChildInfo.student.status = 'waiting';
+        myChildInfo.student.statusChangedAt = getFormattedTime();
         rebuildRosterIndex();
         BackendSyncClient.enqueue("/attendance", "POST", { studentId: myChildInfo.student.id, status: "waiting" });
         playSoundChime('qr');
         pushAlert("info", `🚌 Parent restored bus pickup today for ${myChildInfo.student.name} at ${myChildInfo.stop.name}.`);
       } else {
         myChildInfo.student.status = 'absent';
+        myChildInfo.student.statusChangedAt = getFormattedTime();
         selectedQrStudentId = myChildInfo.student.id;
         rebuildRosterIndex();
         BackendSyncClient.enqueue("/attendance", "POST", { studentId: myChildInfo.student.id, status: "absent" });
         playSoundChime('urgent');
         pushAlert("urgent", `🏠 PARENT LEAVE NOTICE: ${myChildInfo.student.name} is not riding Bus ${activeFleet.plate} today (${myChildInfo.stop.name}).`);
+      }
+      renderApp();
+    });
+
+    // ORBIX R2 (c): Copy WhatsApp trip summary for the watched child.
+    document.getElementById('copyTripSummaryBtn').addEventListener('click', async () => {
+      const summary = buildParentTripSummary();
+      const btn = document.getElementById('copyTripSummaryBtn');
+      if (!summary) return;
+      let copied = false;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(summary);
+          copied = true;
+        }
+      } catch (err) { /* fall through to the textarea fallback */ }
+      if (!copied) {
+        const ta = document.createElement('textarea');
+        ta.value = summary;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { copied = document.execCommand('copy'); } catch (err) { copied = false; }
+        document.body.removeChild(ta);
+      }
+      if (copied) {
+        btn.textContent = "✓ Summary Copied!";
+        setTimeout(() => { btn.textContent = "📋 Copy WhatsApp Summary"; }, 2500);
+        const child = getPrimaryParentChild();
+        pushAlert("info", `📋 Copied WhatsApp trip summary for ${child ? child.student.name : "your child"} — paste it into the family chat.`);
+      } else {
+        pushAlert("urgent", "⚠️ Could not copy the trip summary — the browser blocked the clipboard. Copy the text from the Parent Watch card manually.");
       }
       renderApp();
     });
@@ -4477,7 +4603,9 @@
     });
 
     // STEP 11: Bilingual Language Toggle (தமிழ் / English) & Coimbatore Route Preset
-    document.getElementById('langToggleBtn').addEventListener('click', () => {
+    // ORBIX R2 (d): one toggle function, two buttons (header + Parent Watch) —
+    // a single source of truth for the active language.
+    function toggleLanguage() {
       activeLang = activeLang === "en" ? "ta" : "en";
       playSoundChime('qr');
       pushAlert(
@@ -4487,7 +4615,9 @@
           : "🌐 Language switched back to English mode."
       );
       renderApp();
-    });
+    }
+    document.getElementById('langToggleBtn').addEventListener('click', toggleLanguage);
+    document.getElementById('langToggleParentBtn').addEventListener('click', toggleLanguage);
 
     document.getElementById('loadCoimbatorePresetBtn').addEventListener('click', () => {
       isCoimbatorePreset = !isCoimbatorePreset;
