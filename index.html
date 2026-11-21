@@ -214,7 +214,7 @@
             <span class="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-400/15 text-amber-300 border border-amber-400/30">Live Transit • v2.0</span>
           </div>
           <p id="routeSubtitleText" class="text-xs text-slate-400 font-medium">Route 12 • Morning Pickup • Bus TN-20-AB-4512</p>
-          <p class="text-[11px] text-amber-300/90 font-medium">🏫 S. N. S Matriculation School • Avalurpet Rd, Tiruvannamalai, Kunnumuringi, Tamil Nadu 606604</p>
+          <p id="schoolHeaderLine" class="text-[11px] text-amber-300/90 font-medium">🏫 S. N. S Matriculation School • Avalurpet Rd, Tiruvannamalai, Kunnumuringi, Tamil Nadu 606604</p>
         </div>
       </div>
 
@@ -256,7 +256,7 @@
   <main class="max-w-4xl w-full mx-auto px-4 pt-6 pb-28 flex-1 space-y-6">
 
     <!-- STEP 6: Multi-Bus Fleet Switcher & Driver Quick-Call / SOS Bar -->
-    <section class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-4">
+    <section id="fleetSwitcherSection" class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-4">
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <!-- Fleet Bus Selector Pills -->
         <div class="space-y-1.5">
@@ -878,6 +878,68 @@
       </div>
     </section>
 
+    <!-- ORBIX R2 (a): School Settings & Add-your-school onboarding (admin only) -->
+    <section id="schoolSettingsSection" data-role-section="admin" class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4 transition-opacity">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-amber-700">School Profile</span>
+          <h2 class="font-bold text-base text-slate-900">School Settings — Multi-School Setup</h2>
+          <p class="text-xs text-slate-500 mt-0.5">One app, any school: change the profile below and the header, trip reports and fee receipt rebrand instantly. The pilot school stays saved as the default.</p>
+        </div>
+        <button id="restorePilotSchoolBtn" type="button" class="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 transition">
+          ↺ Restore pilot school (S. N. S)
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div class="space-y-1">
+          <label for="schoolNameInput" class="text-[11px] font-bold text-slate-700 block">School name</label>
+          <input id="schoolNameInput" type="text" value="S. N. S Matriculation School" placeholder="e.g. Demo Public School" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white focus:outline-none focus:border-amber-500" />
+        </div>
+        <div class="space-y-1">
+          <label for="schoolAddressInput" class="text-[11px] font-bold text-slate-700 block">Address</label>
+          <input id="schoolAddressInput" type="text" value="Avalurpet Rd, Tiruvannamalai, Kunnumuringi, Tamil Nadu 606604" placeholder="Street, town, state, PIN" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white focus:outline-none focus:border-amber-500" />
+        </div>
+        <div class="space-y-1">
+          <label for="schoolTaglineInput" class="text-[11px] font-bold text-slate-700 block">Tagline</label>
+          <input id="schoolTaglineInput" type="text" value="Every child accounted for, on every trip" placeholder="One line for parents" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs bg-white focus:outline-none focus:border-amber-500" />
+        </div>
+      </div>
+      <div class="flex items-center justify-between gap-2 pt-1">
+        <span id="schoolSettingsFeedback" class="text-[11px] text-slate-500">Saved on this device and synced to the backend when staff are signed in.</span>
+        <button id="saveSchoolProfileBtn" type="button" class="px-3.5 py-2 rounded-xl font-semibold text-xs bg-amber-500 text-slate-950 hover:bg-amber-400 transition shrink-0">
+          💾 Save School Profile
+        </button>
+      </div>
+
+      <!-- Add your school: 5-step onboarding guide (guidance + deep links, no new data) -->
+      <div class="pt-3 mt-1 border-t border-slate-200/80 space-y-2">
+        <p class="text-xs font-bold text-slate-800">🏫 Add your school — 5 steps to onboard a new school</p>
+        <ol class="grid grid-cols-1 sm:grid-cols-5 gap-2 text-[11px] leading-relaxed list-none">
+          <li class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+            <span class="font-bold text-slate-900">1. School profile</span><br />Set the name, address and tagline in this panel.
+            <button type="button" data-onboard-target="schoolSettingsSection" class="mt-1.5 block text-[11px] font-bold text-amber-700 hover:text-amber-900">Open this panel ↑</button>
+          </li>
+          <li class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+            <span class="font-bold text-slate-900">2. Buses</span><br />The pilot fleet (Buses 12, 15, 18) is on the fleet switcher at the top — each bus keeps its own routes and roster.
+            <button type="button" data-onboard-target="fleetSwitcherSection" class="mt-1.5 block text-[11px] font-bold text-amber-700 hover:text-amber-900">Open fleet switcher ↑</button>
+          </li>
+          <li class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+            <span class="font-bold text-slate-900">3. Routes &amp; stops</span><br />Add or rename pickup stops in the Fleet Route Customizer and the stop-by-stop schedule.
+            <button type="button" data-onboard-target="routeCustomizerCard" class="mt-1.5 block text-[11px] font-bold text-amber-700 hover:text-amber-900">Open route customizer ↑</button>
+          </li>
+          <li class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+            <span class="font-bold text-slate-900">4. Student roster</span><br />Add students to any stop in the Fleet Route Customizer; edit classes in the trip report.
+            <button type="button" data-onboard-target="routeCustomizerCard" class="mt-1.5 block text-[11px] font-bold text-amber-700 hover:text-amber-900">Open roster editor ↑</button>
+          </li>
+          <li class="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+            <span class="font-bold text-slate-900">5. Staff passcode</span><br />Set the staff passcode with the <code class="font-mono">set_passcode.py</code> tool in the repo, so only your staff can edit routes and broadcast.
+            <button type="button" data-onboard-target="pinLockBanner" class="mt-1.5 block text-[11px] font-bold text-amber-700 hover:text-amber-900">Open PIN gate ↑</button>
+          </li>
+        </ol>
+      </div>
+    </section>
+
     <!-- Stop-by-Stop Schedule List -->
     <section id="scheduleSection" class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
       <div class="flex flex-wrap items-center justify-between gap-2">
@@ -1414,7 +1476,7 @@
 
     // P0.1 & P0.3: Cryptographic Staff Auth + Backend Sync Client with Offline Outbox Queue
     // SHA-256 digest of the staff passcode (set with set_passcode.py) so plaintext is never stored in code or DOM
-    const STAFF_PASSCODE_SHA256 = "9e09e197955aa85d841e9592e07017470afb36aa1c48e4ae3c871196e068e00c";
+    const STAFF_PASSCODE_SHA256 = "34ef5b00a1e3861cf6c3b9f64f2637e76f7461ff5749abb7dc26c257557f25e9";
     let sessionAuthToken = ""; // Real tokens come only from POST /api/auth/login (see fetchServerToken).
 
     async function sha256Hex(message) {
@@ -1897,6 +1959,18 @@
     let lastAlertStopKey = "";
     let customDeviceGps = null;
     let activeBroadcastMessage = "";
+    // ORBIX R2 (a): School profile — the school is a configurable entity.
+    // The pilot school (S. N. S Matriculation School, Tiruvannamalai) is the
+    // shipped default; any school can rebrand the app without code edits.
+    // The profile rides inside the persisted state blob (STORAGE_KEY) and
+    // inside /api/sync payloads, so a second device receives it via /api/fleet.
+    const DEFAULT_SCHOOL_PROFILE = {
+      name: "S. N. S Matriculation School",
+      address: "Avalurpet Rd, Tiruvannamalai, Kunnumuringi, Tamil Nadu 606604",
+      tagline: "Every child accounted for, on every trip"
+    };
+    let schoolProfile = { ...DEFAULT_SCHOOL_PROFILE };
+
     let activeRole = "parent";
     let activeShift = "morning";
     let selectedQrStudentId = "S106";
@@ -2332,6 +2406,7 @@
         activeRole,
         activeShift,
         activeBusId,
+        schoolProfile: { ...schoolProfile },
         selectedQrStudentId,
         isSoundMuted,
         isDarkMode,
@@ -2465,6 +2540,13 @@
         }
         if (typeof parsed.activeShift === 'string') {
           activeShift = parsed.activeShift;
+        }
+        if (parsed.schoolProfile && typeof parsed.schoolProfile.name === "string" && parsed.schoolProfile.name.trim()) {
+          schoolProfile = {
+            name: parsed.schoolProfile.name.trim(),
+            address: typeof parsed.schoolProfile.address === "string" ? parsed.schoolProfile.address : DEFAULT_SCHOOL_PROFILE.address,
+            tagline: typeof parsed.schoolProfile.tagline === "string" ? parsed.schoolProfile.tagline : DEFAULT_SCHOOL_PROFILE.tagline
+          };
         }
         if (typeof parsed.selectedQrStudentId === 'string') {
           selectedQrStudentId = parsed.selectedQrStudentId;
@@ -2615,7 +2697,7 @@
       const totals = countStudentTotals();
       const waitingCount = Math.max(0, totals.total - totals.boarded - totals.absent);
 
-      document.getElementById('reportTitleText').textContent = `S. N. S Matriculation School • Route ${activeFleet.routeNumber} Trip Report`;
+      document.getElementById('reportTitleText').textContent = `${schoolProfile.name} • Route ${activeFleet.routeNumber} Trip Report`;
       document.getElementById('reportMetaSubtext').textContent = `Bus ${activeFleet.plate} (${activeFleet.corridor}) • Driver: ${activeFleet.driver} • Shift: ${shiftLabel}`;
       document.getElementById('reportTotalStudents').textContent = String(totals.total);
       document.getElementById('reportBoardedStudents').textContent = String(totals.boarded);
@@ -2663,6 +2745,17 @@
       tbody.appendChild(frag);
     }
 
+    // ORBIX R2 (a): keep the School Settings inputs in sync with the profile
+    // without clobbering text the user is typing right now.
+    function renderSchoolSettings() {
+      const nameInput = document.getElementById('schoolNameInput');
+      const addressInput = document.getElementById('schoolAddressInput');
+      const taglineInput = document.getElementById('schoolTaglineInput');
+      if (nameInput && document.activeElement !== nameInput) nameInput.value = schoolProfile.name;
+      if (addressInput && document.activeElement !== addressInput) addressInput.value = schoolProfile.address;
+      if (taglineInput && document.activeElement !== taglineInput) taglineInput.value = schoolProfile.tagline;
+    }
+
     // STEP 5, 6, 7, 8: Apply Role View, Fleet Header, Session Auth Gate, Audio & Dark Mode UI
     function applyRoleVisibility() {
       if (isDarkMode) {
@@ -2694,10 +2787,11 @@
       const passRatingSection = document.getElementById('busPassAndRatingSection');
       const lostFoundSection = document.getElementById('lostAndFoundSection');
       const pinBanner = document.getElementById('pinLockBanner');
+      const schoolSettingsSection = document.getElementById('schoolSettingsSection');
 
       [parentBanner, driverCheckInCard, parentAlertLogCard, adminAndBroadcastSection,
        routeCustomizerCard, driverBroadcastCard, telemetrySection, qrSection,
-       passRatingSection, lostFoundSection, pinBanner].forEach(el => {
+       passRatingSection, lostFoundSection, pinBanner, schoolSettingsSection].forEach(el => {
         if (el) el.classList.remove('hidden');
       });
 
@@ -2712,10 +2806,12 @@
         routeCustomizerCard.classList.add('hidden');
         driverBroadcastCard.classList.add('hidden');
         adminAndBroadcastSection.classList.add('hidden');
+        schoolSettingsSection.classList.add('hidden');
       } else if (activeRole === 'driver') {
         parentBanner.classList.add('hidden');
         passRatingSection.classList.add('hidden');
         pinBanner.classList.add('hidden');
+        schoolSettingsSection.classList.add('hidden');
         routeCustomizerCard.classList.add('hidden');
         driverBroadcastCard.classList.remove('lg:col-span-5');
         driverBroadcastCard.classList.add('lg:col-span-12');
@@ -2731,6 +2827,7 @@
 
       if (isAdminUnlocked) {
         adminAndBroadcastSection.classList.remove('opacity-50', 'pointer-events-none');
+        schoolSettingsSection.classList.remove('opacity-50', 'pointer-events-none');
         pinIcon.textContent = "🔓";
         pinIcon.className = "w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center justify-center text-base shrink-0";
         pinBadge.textContent = "Session Authenticated";
@@ -2739,6 +2836,7 @@
         pinBtn.textContent = "Lock Admin Controls";
       } else {
         adminAndBroadcastSection.classList.add('opacity-50', 'pointer-events-none');
+        schoolSettingsSection.classList.add('opacity-50', 'pointer-events-none');
         pinIcon.textContent = "🔒";
         pinIcon.className = "w-9 h-9 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-400/30 flex items-center justify-center text-base shrink-0";
         pinBadge.textContent = "Session Locked";
@@ -2796,6 +2894,12 @@
       }
 
       subtitle.textContent = `Route ${activeFleet.routeNumber} (${activeFleet.corridor}) • ${shiftLabel} • Bus ${activeFleet.plate}`;
+
+      // ORBIX R2 (a): header shows the configured school, not a literal.
+      const schoolHeader = document.getElementById('schoolHeaderLine');
+      if (schoolHeader) {
+        schoolHeader.textContent = `🏫 ${schoolProfile.name} • ${schoolProfile.address}`;
+      }
     }
 
     // STEP 10: Render Live Speedometer, Fuel Telemetry & Pre-Trip Safety Checklist
@@ -3032,6 +3136,7 @@
       renderTelemetryAndSafety();
       renderLanguageStrings();
       renderPassAndRating();
+      renderSchoolSettings();
       renderLostAndFoundAndSiblings();
 
       const currentStop = busStops[currentStopIndex] || busStops[0];
@@ -3943,7 +4048,7 @@
 
     document.getElementById('broadcastAllSafeBtn').addEventListener('click', () => {
       if (!requireStaffAuth("All Safe Broadcast")) return;
-      activeBroadcastMessage = "✅ All boarded students have entered S. N. S Matriculation School safely.";
+      activeBroadcastMessage = `✅ All boarded students have entered ${schoolProfile.name} safely.`;
       currentStopIndex = busStops.length - 1;
       isDelayed = false;
       isAutoPlaying = false;
@@ -3982,6 +4087,7 @@
       activeBroadcastMessage = "";
       activeRole = "all";
       activeShift = "morning";
+      schoolProfile = { ...DEFAULT_SCHOOL_PROFILE };
       isAdminUnlocked = false;
       sessionAuthToken = "";
       isSoundMuted = false;
@@ -3991,6 +4097,49 @@
         { time: "7:55 AM", type: "info", text: "Restored factory default stops and isolated student rosters for Buses 12, 15, and 18." }
       );
       renderApp();
+    });
+
+    // ORBIX R2 (a): School Settings — save profile, restore pilot, onboarding links.
+    document.getElementById('saveSchoolProfileBtn').addEventListener('click', () => {
+      if (!requireStaffAuth("Update school profile")) return;
+      const name = document.getElementById('schoolNameInput').value.trim();
+      const address = document.getElementById('schoolAddressInput').value.trim();
+      const tagline = document.getElementById('schoolTaglineInput').value.trim();
+      if (!name) {
+        pushAlert("urgent", "⚠️ School name cannot be empty — profile not saved.");
+        renderApp();
+        return;
+      }
+      schoolProfile = {
+        name,
+        address: address || DEFAULT_SCHOOL_PROFILE.address,
+        tagline: tagline || DEFAULT_SCHOOL_PROFILE.tagline
+      };
+      saveStateToStorage();
+      BackendSyncClient.enqueue("/sync", "POST", { schoolProfile: { ...schoolProfile }, activeBusId });
+      pushAlert("info", `🏫 School profile updated: ${schoolProfile.name}. Header, reports and receipts now use the new name.`);
+      renderApp();
+    });
+
+    document.getElementById('restorePilotSchoolBtn').addEventListener('click', () => {
+      if (!requireStaffAuth("Restore pilot school profile")) return;
+      schoolProfile = { ...DEFAULT_SCHOOL_PROFILE };
+      saveStateToStorage();
+      BackendSyncClient.enqueue("/sync", "POST", { schoolProfile: { ...schoolProfile }, activeBusId });
+      pushAlert("info", "🏫 Pilot school profile restored: S. N. S Matriculation School, Tiruvannamalai.");
+      renderApp();
+    });
+
+    document.querySelectorAll('[data-onboard-target]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('data-onboard-target');
+        if (targetId === 'routeCustomizerCard' || targetId === 'pinLockBanner' || targetId === 'schoolSettingsSection') {
+          activeRole = 'admin';
+        }
+        renderApp();
+        const el = document.getElementById(targetId);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
     });
 
     // STEP 5: Role Switcher Handlers
@@ -4381,7 +4530,7 @@
       const studentLabel = qrMatch ? `${qrMatch.student.name} (${qrMatch.student.id})` : "Krishna (S106)";
       const receiptText = [
         "==========================================",
-        "   S. N. S MATRICULATION SCHOOL TRANSPORT",
+        `   ${schoolProfile.name.toUpperCase().slice(0, 36)} TRANSPORT`,
         "         OFFICIAL BUS FEE RECEIPT         ",
         "==========================================",
         `Receipt No   : #TRN-2026-884`,
