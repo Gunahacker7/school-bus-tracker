@@ -410,4 +410,6 @@ def run_server(port: int = 8080, host: str = None) -> None:
 
 
 if __name__ == "__main__":
-    run_server()
+    # ORBIX R2 (b): Render (and other hosts) assign the port through the
+    # PORT environment variable; default 8080 keeps local runs unchanged.
+    run_server(port=int(os.environ.get("PORT", "8080")))

@@ -1,0 +1,23 @@
+# Render blueprint for the School Bus Tracker sync backend (Orbix R2).
+#
+# Deploy: in the Render dashboard, "New +" -> "Web Service", pick this repo,
+# or "New +" -> "Blueprint" and point at this file. The service is pure
+# Python 3 standard library — no build step, no dependencies to install.
+#
+# Secrets are NEVER in this file. Set these in the Render dashboard only:
+#   BUS_TRACKER_SECRET        freshly generated random hex (32 bytes)
+#   BUS_TRACKER_PASSCODE_HASH the SHA-256 staff passcode hash from the local
+#                           bus_tracker.env (only the hash travels)
+# BUS_TRACKER_BIND and BUS_TRACKER_CORS_ORIGIN are set below (not secret).
+
+services:
+  - type: web
+    name: school-bus-tracker-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python3 server.py
+    envVars:
+      - key: BUS_TRACKER_BIND
+        value: 0.0.0.0
+      - key: BUS_TRACKER_CORS_ORIGIN
+        value: https://school-bus-tracker-gunasekar-e-s-projects.vercel.app
