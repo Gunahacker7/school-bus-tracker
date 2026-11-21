@@ -462,10 +462,6 @@
 
         <!-- Sibling Switcher + Select Parent's Stop + One-Tap Leave Toggle -->
         <div class="flex flex-wrap items-center gap-2 min-w-0">
-          <button id="langToggleParentBtn" type="button" class="px-2.5 py-2 rounded-xl text-xs font-bold bg-white/90 border border-slate-200 text-slate-800 hover:bg-white transition shadow-sm flex items-center gap-1">
-            <span>🌐</span>
-            <span id="langToggleParentText">தமிழ் / EN</span>
-          </button>
           <div class="inline-flex items-center bg-white/90 p-1 rounded-xl border border-slate-200">
             <button id="siblingChild1Btn" type="button" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-sky-600 text-white shadow-sm transition">
               👦 Krishna (5-A)
@@ -1322,26 +1318,6 @@
       </div>
     </section>
 
-    <!-- ORBIX R2 (d): About this project (collapsed by default) -->
-    <section id="aboutProjectSection" class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">About this project</span>
-          <h2 class="font-bold text-base text-slate-900">School Bus Tracker — every child accounted for, on every trip</h2>
-        </div>
-        <button id="toggleAboutProjectBtn" type="button" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 transition">
-          ℹ️ About this project
-        </button>
-      </div>
-      <div id="aboutProjectBody" class="hidden space-y-3 text-xs text-slate-600 leading-relaxed">
-        <p><strong class="text-slate-900">The problem.</strong> In most small-town Indian schools, once a child leaves for the bus stop, parents know nothing until the bus returns — no boarding confirmation, no live fleet view, just paper lists and phone calls. Commercial tracking is priced for big transport fleets, not for a small matriculation school.</p>
-        <p><strong class="text-slate-900">The pilot.</strong> Live today at S. N. S Matriculation School, Tiruvannamalai — Buses 12, 15 and 18, with a named student roster in daily use as the pilot configuration.</p>
-        <p><strong class="text-slate-900">How it works.</strong> Staff check each student in at their stop — by tapping the roster or scanning the student's QR boarding pass — so every child carries a live status (waiting, boarded, absent). Parents watch their own child in Parent Watch; SOS and alerts are one tap away. A single-file web app (HTML, CSS and vanilla JavaScript) with an optional Python + SQLite sync backend (HMAC-signed staff sessions, 12-hour tokens). Offline-first on low-end Android phones, in English and Tamil, on a zero-cost stack.</p>
-        <p><strong class="text-slate-900">Orbix Round 2 build (21–22 Nov 2026).</strong> Multi-school profiles — any school can set its own name, address and tagline in School Settings, with a 5-step Add-your-school guide. A parent trip summary (one tap copies a WhatsApp-ready status text) and SOS pinned to the top of the parent alert feed. The sync backend is deploy-ready (render.yaml shipped, PORT-aware server); the live Render deploy is pending the owner's Render sign-in, and the app runs fully offline-first until then.</p>
-        <p class="text-[11px] text-slate-500">Built solo by Gunasekar E, Chennai, for Orbix — the 48-Hour Global Open Innovation Hackathon (Makers Need More / Unstop). Code: github.com/Gunahacker7/school-bus-tracker</p>
-      </div>
-    </section>
-
     <!-- NEW: Native Android (.APK / Play Store) & iOS (.IPA / App Store) Builder Studio -->
     <section id="nativeStudioPanel" class="hidden bg-slate-900 text-white rounded-2xl p-5 shadow-lg border-2 border-amber-400 space-y-4">
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
@@ -1418,7 +1394,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
         <div class="bg-slate-800/90 p-3.5 rounded-xl border border-slate-700 space-y-1">
           <div class="font-bold text-amber-300">1. Change School Name & Bus Fleet (`fleetBuses`)</div>
-          <p class="text-slate-300 leading-relaxed">Change the school name, address and tagline in the School Settings panel (School Admin role) — the header, trip reports and fee receipt rebrand instantly, no code edits. Bus numbers, license plates (<code class="text-emerald-300">TN-20-AB-4512</code>), driver names and phone numbers live in <code class="text-emerald-300">const fleetBuses</code> in the script.</p>
+          <p class="text-slate-300 leading-relaxed">Search for <code class="text-emerald-300">const fleetBuses</code> in the script to edit bus numbers, license plates (<code class="text-emerald-300">TN-20-AB-4512</code>), driver names, and phone numbers.</p>
         </div>
         <div class="bg-slate-800/90 p-3.5 rounded-xl border border-slate-700 space-y-1">
           <div class="font-bold text-emerald-300">2. Edit Default Stops & Students (`getDefaultStops()`)</div>
@@ -3032,8 +3008,6 @@
       document.getElementById('kpiProgressLabel').textContent = dict.kpiProgress;
       document.getElementById('kpiBoardedLabel').textContent = dict.kpiBoarded;
       document.getElementById('langToggleText').textContent = dict.langBtnLabel;
-      const langParentText = document.getElementById('langToggleParentText');
-      if (langParentText) langParentText.textContent = dict.langBtnLabel;
 
       const parentStop = busStops[parentStopIndex] || busStops[0];
       const currentStop = busStops[currentStopIndex] || busStops[0];
@@ -4397,11 +4371,6 @@
       document.getElementById('publishGuidePanel').classList.toggle('hidden');
     });
 
-    // ORBIX R2 (d): About this project panel (collapsed by default).
-    document.getElementById('toggleAboutProjectBtn').addEventListener('click', () => {
-      document.getElementById('aboutProjectBody').classList.toggle('hidden');
-    });
-
     document.getElementById('closePublishGuideBtn').addEventListener('click', () => {
       document.getElementById('publishGuidePanel').classList.add('hidden');
     });
@@ -4603,9 +4572,7 @@
     });
 
     // STEP 11: Bilingual Language Toggle (தமிழ் / English) & Coimbatore Route Preset
-    // ORBIX R2 (d): one toggle function, two buttons (header + Parent Watch) —
-    // a single source of truth for the active language.
-    function toggleLanguage() {
+    document.getElementById('langToggleBtn').addEventListener('click', () => {
       activeLang = activeLang === "en" ? "ta" : "en";
       playSoundChime('qr');
       pushAlert(
@@ -4615,9 +4582,7 @@
           : "🌐 Language switched back to English mode."
       );
       renderApp();
-    }
-    document.getElementById('langToggleBtn').addEventListener('click', toggleLanguage);
-    document.getElementById('langToggleParentBtn').addEventListener('click', toggleLanguage);
+    });
 
     document.getElementById('loadCoimbatorePresetBtn').addEventListener('click', () => {
       isCoimbatorePreset = !isCoimbatorePreset;
