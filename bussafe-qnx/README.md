@@ -134,6 +134,11 @@ fully functional with the monitor stopped) and corrupt-state recovery.
 
 ## The demo
 
+**Watch the demo video (1:27, unlisted):**
+https://www.youtube.com/watch?v=jlcmSMxtBw8
+— on the author's tech channel:
+https://www.youtube.com/channel/UCyvAavfB1xugxCh0ynjrRrA
+
 The demo video shows a live morning route driven through the real
 tracker UI: route start and roster registration in the monitor, two
 check-ins, one check-out, the drive to school — and the end-of-route
