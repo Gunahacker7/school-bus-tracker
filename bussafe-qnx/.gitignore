@@ -1,0 +1,22 @@
+# Build output
+bussafe_monitor
+*.o
+
+# Runtime state
+state
+state.tmp
+*.log
+
+# QEMU target images — far too large for git; build with mkqnximage
+disk-qemu
+disk-qemu.vmdk
+*.vmdk
+*.qcow2
+
+# Secrets / local config — never commit
+*.env
+bus_tracker.env
+
+# Python
+__pycache__/
+*.db
